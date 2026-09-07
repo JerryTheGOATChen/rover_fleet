@@ -1,0 +1,85 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ================================================================
+       rover_hardware.ros2_control.xacro
+
+       Real-hardware <ros2_control> block for the RoverSystemHardware
+       plugin. EVERY "TODO" BELOW MUST BE FILLED IN against your actual
+       KiCad wiring before this will run - they are deliberately invalid
+       placeholders, not guessed defaults, so a forgotten one fails loudly
+       at on_init() instead of silently doing something to the wrong pin.
+
+       Run `gpiodetect` on the Pi first and confirm gpio_chip matches
+       whichever chip is labeled pinctrl-rp1 - this has changed across
+       kernel versions (was gpiochip4 on some Pi 5 images, gpiochip0 on
+       current ones). Don't assume 0 without checking.
+
+       encoder_counts_per_rev is ticks-per-output-shaft-revolution under
+       this plugin's X2 decoding (both edges of channel A only, not full
+       X4). If it's not on the JGA25-371 datasheet you have, get it
+       empirically: mark the wheel, rotate it exactly one turn by hand,
+       and read the tick delta from `ros2 topic echo /joint_states` with
+       the hardware interface configured but STBY not yet driving anything.
+
+       If a wheel's velocity reads negative while driving forward, swap
+       that joint's encoder_a_pin/encoder_b_pin rather than editing code.
+       ================================================================ -->
+
+  <ros2_control name="RoverSystemHardware" type="system">
+    <hardware>
+      <plugin>rover_hardware/RoverSystemHardware</plugin>
+      <param name="gpio_chip">0</param>                      <!-- verify with gpiodetect -->
+      <param name="standby_pin">TODO</param>                 <!-- TB6612FNG STBY, shared -->
+      <param name="pwm_frequency_hz">1000</param>
+      <param name="max_wheel_angular_velocity">10.0</param>  <!-- rad/s at 100% duty - calibrate -->
+      <param name="velocity_kp">0.0</param>                  <!-- start at 0, see README -->
+      <param name="velocity_ki">0.0</param>
+
+      <param name="left_pwm_pin">TODO</param>
+      <param name="left_dir1_pin">TODO</param>
+      <param name="left_dir2_pin">TODO</param>
+      <param name="right_pwm_pin">TODO</param>
+      <param name="right_dir1_pin">TODO</param>
+      <param name="right_dir2_pin">TODO</param>
+    </hardware>
+
+    <joint name="wheel1_joint"> <!-- front-right -->
+      <param name="side">right</param>
+      <param name="encoder_a_pin">TODO</param>
+      <param name="encoder_b_pin">TODO</param>
+      <param name="encoder_counts_per_rev">TODO</param>
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="wheel2_joint"> <!-- front-left -->
+      <param name="side">left</param>
+      <param name="encoder_a_pin">TODO</param>
+      <param name="encoder_b_pin">TODO</param>
+      <param name="encoder_counts_per_rev">TODO</param>
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="wheel3_joint"> <!-- rear-left -->
+      <param name="side">left</param>
+      <param name="encoder_a_pin">TODO</param>
+      <param name="encoder_b_pin">TODO</param>
+      <param name="encoder_counts_per_rev">TODO</param>
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="wheel4_joint"> <!-- rear-right -->
+      <param name="side">right</param>
+      <param name="encoder_a_pin">TODO</param>
+      <param name="encoder_b_pin">TODO</param>
+      <param name="encoder_counts_per_rev">TODO</param>
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+  </ros2_control>
+
+</robot>

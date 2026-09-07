@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="http://download.ros.org/schema/package_format3.xsd"?>
+<package format="3">
+  <name>rover_hardware</name>
+  <version>0.1.0</version>
+  <description>
+    ros2_control SystemInterface for the physical rover: TB6612FNG motor
+    driver + JGA25-371 gearmotors with quadrature encoders, via lgpio on
+    Raspberry Pi 5. Only builds/runs on the Pi itself - kept separate from
+    rover_control so the sim/FSM package doesn't need lgpio or a real GPIO
+    chip to build on a dev machine.
+  </description>
+  <maintainer email="jeb@example.com">Jeb</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>hardware_interface</depend>
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+
+  <exec_depend>rover_control</exec_depend>
+  <exec_depend>controller_manager</exec_depend>
+  <exec_depend>diff_drive_controller</exec_depend>
+  <exec_depend>joint_state_broadcaster</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>xacro</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <hardware_interface plugin="${prefix}/rover_hardware_plugin.xml"/>
+  </export>
+</package>
