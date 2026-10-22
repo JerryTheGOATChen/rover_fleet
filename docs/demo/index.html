@@ -1,0 +1,421 @@
+<title>Fleet Exploration Replays</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+/* Layout: a mission console. Controls on one row, two synced maps side by side
+   (stacked on phones), then the coverage chart and a summary table. */
+:root {
+  --bg: #f3f5f7;
+  --panel: #ffffff;
+  --ink: #18202b;
+  --muted: #5b6573;
+  --rule: #d9dee4;
+  --signal: #b77700;        /* beacons and the playhead: the radio's color */
+  --map-unknown: #dfe4ea;
+  --map-hidden: #c9d0d9;
+  --map-floor: #ffffff;
+  --map-wall: #39424f;
+  --link: rgba(24, 32, 43, 0.55);
+  --learned: #2a78d6;
+  --return: #eb6834;
+  --greedy: #1baf7a;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161c; --panel: #1a1f27; --ink: #edf0f4; --muted: #a3acb8; --rule: #2c333d;
+    --signal: #e0a635; --map-unknown: #151a22; --map-hidden: #262d38; --map-floor: #e6e2d6;
+    --map-wall: #586273; --link: rgba(237, 240, 244, 0.6);
+    --learned: #3987e5; --return: #d95926; --greedy: #199e70; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161c; --panel: #1a1f27; --ink: #edf0f4; --muted: #a3acb8; --rule: #2c333d;
+  --signal: #e0a635; --map-unknown: #151a22; --map-hidden: #262d38; --map-floor: #e6e2d6;
+  --map-wall: #586273; --link: rgba(237, 240, 244, 0.6);
+  --learned: #3987e5; --return: #d95926; --greedy: #199e70; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font: 15px/1.55 var(--font-body);
+  padding-inline: 16px; padding-block: 28px 48px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 22px; }
+header { display: grid; gap: 6px; max-width: 72ch; }
+.eyebrow { font: 500 12px/1 var(--font-data); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font: 600 clamp(28px, 4vw, 40px)/1.1 var(--font-display); margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); }
+
+.controls {
+  display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: end;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px;
+}
+.field { display: grid; gap: 4px; }
+.field label { font: 500 11px/1 var(--font-data); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+select, button {
+  font: 500 14px/1 var(--font-body); color: var(--ink); background: var(--bg);
+  border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; min-height: 36px;
+}
+button { cursor: pointer; }
+button.primary { background: var(--ink); color: var(--panel); border-color: var(--ink); min-width: 84px; }
+select:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.timeline { flex: 1 1 260px; display: grid; gap: 4px; min-width: 0; }
+.timeline .row { display: flex; gap: 10px; align-items: center; }
+input[type=range] { width: 100%; accent-color: var(--signal); }
+.clock { font: 500 14px/1 var(--font-data); font-variant-numeric: tabular-nums; min-width: 9ch; text-align: right; }
+
+.maps { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 760px) { .maps { grid-template-columns: 1fr; } }
+.map { display: grid; gap: 8px; min-width: 0; }
+.map-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.map-title { display: flex; gap: 8px; align-items: center; font: 600 18px/1.2 var(--font-display); }
+.swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.readout { font: 400 13px/1.3 var(--font-data); color: var(--muted); font-variant-numeric: tabular-nums; }
+.readout b { color: var(--ink); font-weight: 500; }
+canvas.board { width: 100%; height: auto; display: block; border-radius: 6px; background: var(--map-unknown); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.key { width: 14px; height: 10px; border-radius: 2px; display: inline-block; }
+
+.lower { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .lower { grid-template-columns: 1fr; } }
+.card { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+h2 { font: 600 17px/1.2 var(--font-display); margin: 0 0 8px; }
+.chart-wrap { position: relative; }
+svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
+.tip {
+  position: absolute; pointer-events: none; background: var(--ink); color: var(--panel);
+  font: 400 12px/1.4 var(--font-data); padding: 6px 8px; border-radius: 5px; white-space: nowrap;
+  transform: translate(-50%, -110%);
+}
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { font: 500 11px/1.2 var(--font-data); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--rule); }
+td { padding: 7px 4px; border-bottom: 1px solid var(--rule); font-variant-numeric: tabular-nums; }
+td.num, th.num { text-align: right; font-family: var(--font-data); }
+.notes { font-size: 14px; color: var(--muted); display: grid; gap: 6px; max-width: 75ch; }
+.notes p { margin: 0; }
+.notes b { color: var(--ink); font-weight: 500; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Multi-robot exploration · limited radio</div>
+    <h1>Fleet Exploration Replays</h1>
+    <p>Three rovers map a house they have never seen while an operator waits at the base. The radio only reaches a few meters and every wall costs 3 m of range, so whatever a robot sees out of range stays unknown to the base until it reports back. Watch two strategies play the same house from the same start.</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="Replay controls">
+    <div class="field"><label for="house">House</label><select id="house"></select></div>
+    <div class="field"><label for="comm">Radio range</label><select id="comm"></select></div>
+    <div class="field"><label for="left">Left</label><select id="left"></select></div>
+    <div class="field"><label for="right">Right</label><select id="right"></select></div>
+    <button id="play" class="primary" type="button">Play</button>
+    <button id="speed" type="button" aria-label="Playback speed">8× speed</button>
+    <div class="timeline">
+      <label class="eyebrow" for="scrub">Mission time</label>
+      <div class="row"><input id="scrub" type="range" min="0" max="240" value="0"><span class="clock" id="clock">0 s</span></div>
+    </div>
+  </div>
+
+  <div class="maps">
+    <section class="map" id="panelL"></section>
+    <section class="map" id="panelR"></section>
+  </div>
+
+  <div class="legend" aria-label="Map legend">
+    <span><i class="key" style="background:var(--map-floor);outline:1px solid var(--rule)"></i>floor the base knows</span>
+    <span><i class="key" id="keyTint"></i>seen by a robot, not yet reported</span>
+    <span><i class="key" style="background:var(--map-hidden)"></i>walls nobody has seen</span>
+    <span><i class="key" style="background:var(--link);height:2px"></i>radio link</span>
+    <span><i class="key" style="background:var(--signal);transform:rotate(45deg);width:9px;height:9px"></i>relay beacon</span>
+    <span><i class="key" style="border:2px solid var(--ink);width:10px"></i>base station</span>
+  </div>
+
+  <div class="lower">
+    <div class="card">
+      <h2>How much of the house the base knows</h2>
+      <div class="chart-wrap" id="chartWrap">
+        <svg class="chart" id="chart" viewBox="0 0 640 250" role="img" aria-label="Base coverage over mission time for both strategies"></svg>
+        <div class="tip" id="tip" hidden></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2 id="tableTitle">This house, every strategy</h2>
+      <table>
+        <thead><tr><th>Strategy</th><th class="num">Avg known</th><th class="num">At 240 s</th></tr></thead>
+        <tbody id="summary"></tbody>
+      </table>
+      <p class="readout" style="margin:10px 0 0">Avg known is the share of the house the base knew, averaged over the whole mission: higher means the operator learns the layout sooner.</p>
+    </div>
+  </div>
+
+  <div class="notes">
+    <p><b>Learned</b> is a policy trained with multi-agent PPO on thousands of generated houses it never repeats; every 3 s each robot scores its options (frontiers, teammates, the base, staying put as a relay) and Nav2-style path following does the driving. <b>Return-to-base</b> explores greedily and heads home after <span id="period">60</span> s out of contact (the best value on separate tuning houses). <b>Greedy</b> always takes the nearest large frontier and only comes home when nothing is left.</p>
+    <p>Every replay uses the same simulator seed, so differences come from the strategy alone. The Gazebo house is the 16 × 12 m world the ROS stack runs in; the generated house was never seen in training.</p>
+  </div>
+</div>
+
+<script src="replays.js"></script>
+<script>
+(function () {
+  const R = window.REPLAYS;
+  const LABEL = { learned: 'Learned (MAPPO)', return: 'Return-to-base', greedy: 'Greedy' };
+  const HOUSE_LABEL = { generated: 'Generated house (never trained on)', gazebo: 'Gazebo house (16 × 12 m)' };
+  const $ = (id) => document.getElementById(id);
+  const speeds = [8, 16, 32];
+  const state = { house: Object.keys(R.houses)[0], comm: '5', left: 'learned', right: 'return',
+                  frame: 0, playing: false, speedIdx: 0 };
+
+  function fill(sel, items, value) {
+    sel.innerHTML = items.map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
+    sel.value = value;
+  }
+  fill($('house'), Object.keys(R.houses).map((k) => [k, HOUSE_LABEL[k] || k]), state.house);
+  fill($('comm'), R.ranges.map((r) => [String(r), `${r} m`]), state.comm);
+  fill($('left'), R.policies.map((p) => [p, LABEL[p]]), state.left);
+  fill($('right'), R.policies.map((p) => [p, LABEL[p]]), state.right);
+
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  function rgb(color) {
+    const c = document.createElement('canvas').getContext('2d');
+    c.fillStyle = color; c.fillRect(0, 0, 1, 1);
+    const d = c.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2]];
+  }
+
+  function Panel(root) {
+    root.innerHTML = `<div class="map-head"><div class="map-title"><i class="swatch"></i><span></span></div>
+      <div class="readout"></div></div><canvas class="board"></canvas>`;
+    this.title = root.querySelector('.map-title span');
+    this.swatch = root.querySelector('.swatch');
+    this.readout = root.querySelector('.readout');
+    this.canvas = root.querySelector('canvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.off = document.createElement('canvas');
+  }
+  Panel.prototype.load = function (houseKey, comm, policy) {
+    this.house = R.houses[houseKey];
+    this.frames = R.episodes[`${houseKey}|${comm}|${policy}`];
+    this.policy = policy;
+    const n = this.house.h * this.house.w;
+    this.walls = new Uint8Array(n); this.house.walls.forEach((i) => { this.walls[i] = 1; });
+    this.reset();
+    this.title.textContent = LABEL[policy];
+    this.swatch.style.background = `var(--${policy})`;
+    this.off.width = this.house.w; this.off.height = this.house.h;
+  };
+  Panel.prototype.reset = function () {
+    const n = this.house.h * this.house.w;
+    this.base = new Int8Array(n).fill(-1);
+    this.robot = this.frames[0].robots.map(() => new Uint8Array(n));
+    this.applied = -1;
+  };
+  Panel.prototype.apply = function (k) {
+    k = Math.min(k, this.frames.length - 1);
+    if (k < this.applied) this.reset();
+    for (let i = this.applied + 1; i <= k; i++) {
+      const f = this.frames[i];
+      f.base_free.forEach((c) => { this.base[c] = 0; });
+      f.base_occ.forEach((c) => { this.base[c] = 1; });
+      f.robot_free.forEach((cells, r) => cells.forEach((c) => { this.robot[r][c] = 1; }));
+    }
+    this.applied = k;
+    return this.frames[k];
+  };
+  Panel.prototype.draw = function (k) {
+    const f = this.apply(k);
+    const { h, w } = this.house;
+    const scale = Math.max(2, Math.floor((this.canvas.clientWidth || 500) * devicePixelRatio / w));
+    if (this.canvas.width !== w * scale) { this.canvas.width = w * scale; this.canvas.height = h * scale; }
+    const col = { unknown: rgb(css('--map-unknown')), hidden: rgb(css('--map-hidden')),
+                  floor: rgb(css('--map-floor')), wall: rgb(css('--map-wall')),
+                  team: rgb(css(`--${this.policy}`)) };
+    const tint = col.team.map((v, i) => Math.round(0.42 * v + 0.58 * col.unknown[i]));
+    const octx = this.off.getContext('2d');
+    const img = octx.createImageData(w, h);
+    for (let r = 0; r < h; r++) {
+      for (let c = 0; c < w; c++) {
+        const i = r * w + c;
+        let px = col.unknown;
+        if (this.base[i] === 0) px = col.floor;
+        else if (this.base[i] === 1) px = col.wall;
+        else if (this.robot.some((m) => m[i])) px = tint;
+        else if (this.walls[i]) px = col.hidden;
+        const o = ((h - 1 - r) * w + c) * 4;   // row 0 is the bottom of the map
+        img.data[o] = px[0]; img.data[o + 1] = px[1]; img.data[o + 2] = px[2]; img.data[o + 3] = 255;
+      }
+    }
+    octx.putImageData(img, 0, 0);
+    const ctx = this.ctx;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(this.off, 0, 0, w * scale, h * scale);
+    const P = (cell) => [(cell[1] + 0.5) * scale, (h - cell[0] - 0.5) * scale];
+
+    ctx.strokeStyle = css('--link'); ctx.lineWidth = Math.max(1.5, scale * 0.35);
+    f.links.forEach(([a, b]) => {
+      const [x1, y1] = P(f.nodes[a]); const [x2, y2] = P(f.nodes[b]);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    });
+    ctx.fillStyle = css('--signal');
+    f.beacons.forEach((b) => {
+      const [x, y] = P(b); const s = scale * 1.4;
+      ctx.beginPath(); ctx.moveTo(x, y - s); ctx.lineTo(x + s, y); ctx.lineTo(x, y + s); ctx.lineTo(x - s, y); ctx.fill();
+    });
+    const [bx, by] = P(this.house.base); const bs = scale * 1.6;
+    ctx.fillStyle = css('--panel'); ctx.fillRect(bx - bs, by - bs, 2 * bs, 2 * bs);
+    ctx.strokeStyle = css('--ink'); ctx.lineWidth = Math.max(1.5, scale * 0.4);
+    ctx.strokeRect(bx - bs, by - bs, 2 * bs, 2 * bs);
+
+    const team = css(`--${this.policy}`);
+    f.robots.forEach(([r, c, alive, tr, tc], i) => {
+      const [x, y] = P([r, c]); const rad = scale * 1.9;
+      if (alive && tr >= 0) {
+        const [tx, ty] = P([tr, tc]);
+        ctx.strokeStyle = team; ctx.lineWidth = Math.max(1, scale * 0.3);
+        ctx.beginPath(); ctx.arc(tx, ty, scale, 0, 2 * Math.PI); ctx.stroke();
+      }
+      ctx.fillStyle = alive ? team : css('--muted');
+      ctx.strokeStyle = css('--panel'); ctx.lineWidth = Math.max(1.5, scale * 0.45);
+      ctx.beginPath(); ctx.arc(x, y, rad, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `600 ${Math.round(rad * 1.15)}px ${css('--font-data').split(',')[0]}`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(i + 1), x, y + rad * 0.05);
+    });
+    const avg = this.frames.slice(0, Math.min(k, this.frames.length - 1) + 1)
+      .reduce((s, g) => s + g.cov, 0) / (Math.min(k, this.frames.length - 1) + 1);
+    this.readout.innerHTML = `base knows <b>${Math.round(f.cov * 100)}%</b> · avg so far <b>${Math.round(avg * 100)}%</b>` +
+      (f.beacons.length ? ` · beacons <b>${f.beacons.length}</b>` : '');
+  };
+
+  const left = new Panel($('panelL')); const right = new Panel($('panelR'));
+
+  // ---------- chart
+  const svg = $('chart'); const NS = 'http://www.w3.org/2000/svg';
+  const C = { x0: 44, x1: 560, y0: 214, y1: 14, tMax: 240 };
+  const X = (t) => C.x0 + (t / C.tMax) * (C.x1 - C.x0);
+  const Y = (v) => C.y0 - v * (C.y0 - C.y1);
+  function el(name, attrs, parent) {
+    const e = document.createElementNS(NS, name);
+    Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v)); (parent || svg).appendChild(e); return e;
+  }
+  function drawChart() {
+    svg.innerHTML = '';
+    for (let v = 0; v <= 1.0001; v += 0.25) {
+      el('line', { x1: C.x0, x2: C.x1, y1: Y(v), y2: Y(v), stroke: 'var(--rule)', 'stroke-width': 1 });
+      el('text', { x: C.x0 - 8, y: Y(v) + 4, 'text-anchor': 'end', fill: 'var(--muted)', 'font-size': 11,
+                   'font-family': 'var(--font-data)' }).textContent = `${Math.round(v * 100)}%`;
+    }
+    for (let t = 0; t <= 240; t += 60) {
+      el('text', { x: X(t), y: C.y0 + 18, 'text-anchor': 'middle', fill: 'var(--muted)', 'font-size': 11,
+                   'font-family': 'var(--font-data)' }).textContent = `${t} s`;
+    }
+    const ends = [];
+    [left, right].forEach((p) => {
+      const pts = p.frames.map((f) => `${X(f.t).toFixed(1)},${Y(f.cov).toFixed(1)}`);
+      const last = p.frames[p.frames.length - 1];
+      if (last.t < 240) pts.push(`${X(240)},${Y(last.cov).toFixed(1)}`);
+      el('polyline', { points: pts.join(' '), fill: 'none', stroke: `var(--${p.policy})`, 'stroke-width': 2,
+                       'stroke-linejoin': 'round', 'stroke-linecap': 'round' });
+      ends.push({ y: Y(last.cov), label: `${LABEL[p.policy]} ${Math.round(last.cov * 100)}%`, policy: p.policy });
+    });
+    if (left.policy === right.policy) ends.pop();
+    ends.sort((a, b) => a.y - b.y);
+    if (ends.length === 2 && ends[1].y - ends[0].y < 15) ends[1].y = ends[0].y + 15;
+    ends.forEach((e) => {
+      el('circle', { cx: X(240), cy: e.y, r: 4, fill: `var(--${e.policy})`, stroke: 'var(--panel)', 'stroke-width': 2 });
+      el('text', { x: X(240) + 10, y: e.y + 4, fill: 'var(--ink)', 'font-size': 12,
+                   'font-family': 'var(--font-body)' }).textContent = e.label;
+    });
+    playhead = el('line', { y1: C.y1, y2: C.y0, stroke: 'var(--signal)', 'stroke-width': 1.5 });
+    movePlayhead();
+  }
+  let playhead = null;
+  function movePlayhead() {
+    const t = left.frames[Math.min(state.frame, left.frames.length - 1)].t;
+    const x = X(Math.min(state.frame, 240));
+    if (playhead) { playhead.setAttribute('x1', x); playhead.setAttribute('x2', x); }
+    return t;
+  }
+  const wrap = $('chartWrap'); const tip = $('tip');
+  function frameAt(evt) {
+    const box = svg.getBoundingClientRect();
+    const t = ((evt.clientX - box.left) / box.width * 640 - C.x0) / (C.x1 - C.x0) * C.tMax;
+    return Math.max(0, Math.min(240, Math.round(t)));
+  }
+  wrap.addEventListener('mousemove', (evt) => {
+    const k = frameAt(evt);
+    const value = (p) => Math.round(p.frames[Math.min(k, p.frames.length - 1)].cov * 100);
+    tip.hidden = false;
+    tip.textContent = `${k} s · ${LABEL[left.policy]} ${value(left)}% · ${LABEL[right.policy]} ${value(right)}%`;
+    const box = wrap.getBoundingClientRect();
+    tip.style.left = `${Math.min(Math.max(evt.clientX - box.left, 120), box.width - 120)}px`;
+    tip.style.top = `${evt.clientY - box.top}px`;
+  });
+  wrap.addEventListener('mouseleave', () => { tip.hidden = true; });
+  wrap.addEventListener('click', (evt) => { seek(frameAt(evt)); });
+
+  // ---------- summary table
+  function drawTable() {
+    $('tableTitle').textContent = `${state.comm} m radio, every strategy`;
+    $('summary').innerHTML = R.policies.map((p) => {
+      const fr = R.episodes[`${state.house}|${state.comm}|${p}`];
+      const avg = fr.reduce((s, f) => s + f.cov, 0) / fr.length;
+      return `<tr><td><span style="display:inline-flex;gap:8px;align-items:center"><i class="swatch" style="background:var(--${p})"></i>${LABEL[p]}</span></td>` +
+        `<td class="num">${Math.round(avg * 100)}%</td><td class="num">${Math.round(fr[fr.length - 1].cov * 100)}%</td></tr>`;
+    }).join('');
+  }
+
+  // ---------- playback
+  function render() {
+    left.draw(state.frame); right.draw(state.frame);
+    movePlayhead();
+    $('scrub').value = state.frame;
+    $('clock').textContent = `${state.frame} s`;
+  }
+  function seek(k) { state.frame = k; render(); }
+  function load() {
+    left.load(state.house, state.comm, state.left);
+    right.load(state.house, state.comm, state.right);
+    $('keyTint').style.background = `color-mix(in srgb, var(--${state.left}) 45%, var(--map-unknown))`;
+    drawChart(); drawTable(); render();
+  }
+  let last = 0;
+  function tick(now) {
+    if (!state.playing) return;
+    if (now - last >= 1000 / speeds[state.speedIdx]) {
+      last = now;
+      if (state.frame >= 240) { setPlaying(false); return; }
+      state.frame += 1; render();
+    }
+    requestAnimationFrame(tick);
+  }
+  function setPlaying(on) {
+    state.playing = on; $('play').textContent = on ? 'Pause' : (state.frame >= 240 ? 'Replay' : 'Play');
+    if (on) { if (state.frame >= 240) state.frame = 0; requestAnimationFrame(tick); }
+  }
+  $('play').addEventListener('click', () => setPlaying(!state.playing));
+  $('speed').addEventListener('click', () => {
+    state.speedIdx = (state.speedIdx + 1) % speeds.length;
+    $('speed').textContent = `${speeds[state.speedIdx]}× speed`;
+  });
+  $('scrub').addEventListener('input', (e) => { setPlaying(false); seek(Number(e.target.value)); });
+  ['house', 'comm', 'left', 'right'].forEach((id) => $(id).addEventListener('change', (e) => {
+    state[id] = e.target.value; load();
+  }));
+  window.addEventListener('resize', render);
+  if (window.matchMedia) {
+    matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { drawChart(); render(); });
+  }
+  new MutationObserver(() => { drawChart(); render(); })
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  if (R.return_period) $('period').textContent = String(Math.round(R.return_period));
+  state.frame = 120;   // open mid-mission so the first view shows the difference
+  load();
+})();
+</script>

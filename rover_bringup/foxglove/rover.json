@@ -1,0 +1,216 @@
+{
+  "configById": {
+    "3D!rover": {
+      "cameraState": {
+        "perspective": true,
+        "distance": 14,
+        "phi": 45,
+        "thetaOffset": 45,
+        "targetOffset": [0, 0, 0],
+        "target": [0, 0, 0],
+        "targetOrientation": [0, 0, 0, 1],
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-position",
+      "followTf": "map",
+      "scene": {
+        "transforms": { "showLabel": false, "axisScale": 0.5 }
+      },
+      "transforms": {},
+      "topics": {
+        "/scan": {
+          "visible": true,
+          "pointSize": 5,
+          "colorField": "range",
+          "colorMode": "colormap",
+          "colorMap": "turbo"
+        },
+        "/map": { "visible": true },
+        "/plan": { "visible": true },
+        "/local_plan": { "visible": true },
+        "/global_costmap/costmap": { "visible": false },
+        "/local_costmap/costmap": { "visible": false }
+      },
+      "layers": {
+        "grid": {
+          "layerId": "foxglove.Grid",
+          "instanceId": "grid",
+          "label": "Grid",
+          "visible": true,
+          "frameLocked": true,
+          "frameId": "map",
+          "size": 10,
+          "divisions": 10,
+          "lineWidth": 1,
+          "color": "#248eff80",
+          "position": [0, 0, 0],
+          "rotation": [0, 0, 0],
+          "order": 1
+        },
+        "urdf": {
+          "layerId": "foxglove.Urdf",
+          "instanceId": "urdf",
+          "label": "Rover",
+          "visible": true,
+          "sourceType": "topic",
+          "topic": "/robot_description",
+          "url": "",
+          "filePath": "",
+          "parameter": "",
+          "framePrefix": "",
+          "displayMode": "auto",
+          "fallbackColor": "#ffffff",
+          "order": 2
+        }
+      },
+      "publish": {
+        "type": "pose",
+        "poseTopic": "/goal_pose",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "imageMode": {}
+    },
+    "Indicator!fsm": {
+      "path": "/autonomy/state.data",
+      "style": "background",
+      "fallbackColor": "#607d8b",
+      "fallbackLabel": "FSM not running",
+      "rules": [
+        { "operator": "=", "rawValue": "IDLE", "color": "#757575", "label": "IDLE" },
+        { "operator": "=", "rawValue": "EXPLORE", "color": "#2e7d32", "label": "EXPLORE" },
+        { "operator": "=", "rawValue": "AVOID_OBSTACLE", "color": "#ef6c00", "label": "AVOID OBSTACLE" },
+        { "operator": "=", "rawValue": "RETURN_HOME", "color": "#1565c0", "label": "RETURN HOME" },
+        { "operator": "=", "rawValue": "EMERGENCY_STOP", "color": "#c62828", "label": "EMERGENCY STOP" }
+      ]
+    },
+    "Publish!estop": {
+      "topicName": "/autonomy/emergency_stop",
+      "datatype": "std_msgs/msg/Bool",
+      "buttonText": "E-STOP",
+      "buttonTooltip": "Latches the FSM into EMERGENCY_STOP (clear with 'Clear e-stop')",
+      "buttonColor": "#c62828",
+      "advancedView": false,
+      "value": "{\n  \"data\": true\n}"
+    },
+    "CallService!explore": {
+      "serviceName": "/autonomy/start_explore",
+      "requestPayload": "{}",
+      "layout": "vertical",
+      "timeoutSeconds": 10,
+      "buttonText": "Start explore",
+      "buttonTooltip": "",
+      "buttonColor": "#2e7d32",
+      "editingMode": false
+    },
+    "CallService!home": {
+      "serviceName": "/autonomy/return_home",
+      "requestPayload": "{}",
+      "layout": "vertical",
+      "timeoutSeconds": 10,
+      "buttonText": "Return home",
+      "buttonTooltip": "",
+      "buttonColor": "#1565c0",
+      "editingMode": false
+    },
+    "CallService!stop": {
+      "serviceName": "/autonomy/stop",
+      "requestPayload": "{}",
+      "layout": "vertical",
+      "timeoutSeconds": 10,
+      "buttonText": "Stop (idle)",
+      "buttonTooltip": "",
+      "buttonColor": "#757575",
+      "editingMode": false
+    },
+    "CallService!clear": {
+      "serviceName": "/autonomy/clear_emergency",
+      "requestPayload": "{}",
+      "layout": "vertical",
+      "timeoutSeconds": 10,
+      "buttonText": "Clear e-stop",
+      "buttonTooltip": "",
+      "buttonColor": "#ef6c00",
+      "editingMode": false
+    },
+    "Teleop!drive": {
+      "topic": "/cmd_vel",
+      "publishRate": 10,
+      "upButton": { "field": "linear-x", "value": 0.3 },
+      "downButton": { "field": "linear-x", "value": -0.3 },
+      "leftButton": { "field": "angular-z", "value": 0.6 },
+      "rightButton": { "field": "angular-z", "value": -0.6 }
+    },
+    "Plot!speed": {
+      "paths": [
+        {
+          "value": "/cmd_vel_safe.linear.x",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "commanded (m/s)"
+        },
+        {
+          "value": "/odom.twist.twist.linear.x",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "actual (m/s)"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 30,
+      "sidebarDimension": 240
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": { "speed": 1 },
+  "layout": {
+    "direction": "row",
+    "splitPercentage": 62,
+    "first": "3D!rover",
+    "second": {
+      "direction": "column",
+      "splitPercentage": 14,
+      "first": {
+        "direction": "row",
+        "splitPercentage": 62,
+        "first": "Indicator!fsm",
+        "second": "Publish!estop"
+      },
+      "second": {
+        "direction": "column",
+        "splitPercentage": 30,
+        "first": {
+          "direction": "row",
+          "first": {
+            "direction": "column",
+            "first": "CallService!explore",
+            "second": "CallService!home"
+          },
+          "second": {
+            "direction": "column",
+            "first": "CallService!stop",
+            "second": "CallService!clear"
+          }
+        },
+        "second": {
+          "direction": "column",
+          "splitPercentage": 50,
+          "first": "Teleop!drive",
+          "second": "Plot!speed"
+        }
+      }
+    }
+  }
+}

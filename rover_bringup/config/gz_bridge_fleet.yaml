@@ -1,0 +1,45 @@
+# gz_bridge_fleet.yaml — one robot's ROS <-> gz bridge in the fleet (fleet.launch.py)
+#
+# Loaded by one parameter_bridge per robot, running in that robot's namespace
+# with expand_gz_topic_names: true, so relative names on BOTH sides get the
+# namespace: "scan" is /robot1/scan in ROS and in gz (the URDF publishes gz
+# topics as robot1/scan etc. when xacro ns:=robot1). The clock is bridged
+# once for the whole fleet by fleet.launch.py, not here.
+#
+# Same topics as gz_bridge.yaml (the single robot) minus joint_states (the
+# fleet publishes wheel states from ROS at 10 Hz), plus ground_truth for
+# rover_fleet's comms_sim.
+
+- ros_topic_name: "cmd_vel_safe"
+  gz_topic_name: "cmd_vel"
+  ros_type_name: "geometry_msgs/msg/Twist"
+  gz_type_name: "gz.msgs.Twist"
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "odom"
+  gz_topic_name: "odom"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_type_name: "gz.msgs.Odometry"
+  direction: GZ_TO_ROS
+
+# Every robot's odom -> body_link goes on the one shared /tf (frames are
+# already prefixed: robot1/odom -> robot1/body_link).
+- ros_topic_name: "/tf"
+  gz_topic_name: "tf"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_type_name: "gz.msgs.Pose_V"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "scan"
+  gz_topic_name: "scan"
+  ros_type_name: "sensor_msgs/msg/LaserScan"
+  gz_type_name: "gz.msgs.LaserScan"
+  direction: GZ_TO_ROS
+
+# True pose in the world, only for comms_sim (radio physics). The robot's
+# own nodes never use it.
+- ros_topic_name: "ground_truth"
+  gz_topic_name: "ground_truth"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_type_name: "gz.msgs.Odometry"
+  direction: GZ_TO_ROS

@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="http://download.ros.org/schema/package_format3.xsd"?>
+<package format="3">
+  <name>fleet_rl</name>
+  <version>0.1.0</version>
+  <description>
+    Multi-robot exploration under limited communication, without ROS: the grid
+    simulator, radio model, hand-written baselines, the learned policy (numpy
+    inference) and its MAPPO training code. rover_fleet's ROS nodes import the
+    same observation and policy code, so Gazebo runs exactly what was trained.
+  </description>
+  <maintainer email="ogjeche3342@gmail.com">Jerry</maintainer>
+  <license>Apache-2.0</license>
+
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-scipy</exec_depend>
+  <exec_depend>python3-pil</exec_depend>
+  <exec_depend>python3-matplotlib</exec_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

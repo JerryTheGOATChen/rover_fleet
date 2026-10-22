@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the image (ROS 2 Jazzy + all rover packages)
+        run: docker build -t rover-fleet .
+
+      - name: Lint (pyflakes)
+        run: >
+          docker run --rm rover-fleet bash -c
+          "cd /ws/src && python3 -m pyflakes fleet_rl rover_fleet rover_bringup/launch"
+
+      - name: Unit tests (fleet_rl, rover_fleet)
+        run: >
+          docker run --rm rover-fleet bash -c
+          "source /ws/install/setup.bash && cd /ws &&
+          colcon test --packages-select fleet_rl rover_fleet --event-handlers console_direct+ &&
+          colcon test-result --verbose"
+
+      - name: Fleet launch file loads
+        run: >
+          docker run --rm rover-fleet bash -c
+          "source /ws/install/setup.bash && ros2 launch rover_bringup fleet.launch.py --show-args"

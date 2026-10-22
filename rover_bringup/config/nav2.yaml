@@ -1,0 +1,201 @@
+# nav2.yaml — parameters for the four Nav2 servers started by nav.launch.py
+# (nav:=true). SLAM provides map->odom, so there's no amcl/map_server.
+# use_sim_time is injected by the launch file.
+#
+# Frames: global map, local odom, robot body_link (see rover.urdf.xacro).
+# fleet.launch.py reuses this file for every robot, rewriting frames and
+# absolute topics per robot (robot1/map, /robot1/scan, ...; see
+# rover_fleet/launch_utils.py).
+# Speeds stay inside the DiffDrive limits in rover_description/urdf/gazebo.xacro.
+
+bt_navigator:
+  ros__parameters:
+    global_frame: map
+    robot_base_frame: body_link
+    odom_topic: /odom
+    bt_loop_duration: 10
+    default_server_timeout: 20
+    wait_for_service_timeout: 1000
+    action_server_result_timeout: 900.0
+    navigators: ["navigate_to_pose"]
+    navigate_to_pose:
+      plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
+    error_code_names:
+      - compute_path_error_code
+      - follow_path_error_code
+
+planner_server:
+  ros__parameters:
+    expected_planner_frequency: 20.0
+    planner_plugins: ["GridBased"]
+    GridBased:
+      plugin: "nav2_navfn_planner::NavfnPlanner"
+      tolerance: 0.5         # frontier goals sit at the edge of known space
+      use_astar: false
+      allow_unknown: true
+
+controller_server:
+  ros__parameters:
+    controller_frequency: 20.0
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.5
+    min_theta_velocity_threshold: 0.001
+    failure_tolerance: 0.3
+    progress_checker_plugin: "progress_checker"
+    goal_checker_plugins: ["general_goal_checker"]
+    controller_plugins: ["FollowPath"]
+
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: 0.5
+      movement_time_allowance: 10.0
+
+    general_goal_checker:
+      stateful: True
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.25
+      yaw_goal_tolerance: 0.25
+
+    FollowPath:
+      plugin: "dwb_core::DWBLocalPlanner"
+      # Only /local_plan is published (shown in RViz/Foxglove); DWB's other
+      # debug outputs are off.
+      debug_trajectory_details: False
+      publish_evaluation: False
+      publish_global_plan: False
+      publish_transformed_plan: False
+      publish_trajectories: False
+      publish_cost_grid_pc: False
+      publish_local_plan: True
+      min_vel_x: 0.0
+      min_vel_y: 0.0
+      max_vel_x: 0.8
+      max_vel_y: 0.0
+      max_vel_theta: 1.0
+      min_speed_xy: 0.0
+      max_speed_xy: 0.8
+      min_speed_theta: 0.0
+      acc_lim_x: 1.0
+      acc_lim_y: 0.0
+      acc_lim_theta: 1.0
+      decel_lim_x: -1.0
+      decel_lim_y: 0.0
+      decel_lim_theta: -1.0
+      vx_samples: 20
+      vy_samples: 5
+      vtheta_samples: 20
+      sim_time: 1.7
+      linear_granularity: 0.05
+      angular_granularity: 0.025
+      transform_tolerance: 0.5  # SLAM map->odom can lag in a loaded sim
+      xy_goal_tolerance: 0.25
+      trans_stopped_velocity: 0.25
+      short_circuit_trajectory_evaluation: True
+      stateful: True
+      critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
+      BaseObstacle.scale: 0.02
+      PathAlign.scale: 32.0
+      PathAlign.forward_point_distance: 0.1
+      GoalAlign.scale: 24.0
+      GoalAlign.forward_point_distance: 0.1
+      PathDist.scale: 32.0
+      GoalDist.scale: 24.0
+      RotateToGoal.scale: 32.0
+      RotateToGoal.slowing_factor: 5.0
+      RotateToGoal.lookahead_time: -1.0
+
+# Only the recoveries the default navigate_to_pose behavior tree uses.
+behavior_server:
+  ros__parameters:
+    local_costmap_topic: local_costmap/costmap_raw
+    local_footprint_topic: local_costmap/published_footprint
+    cycle_frequency: 10.0
+    behavior_plugins: ["spin", "backup", "wait"]
+    spin:
+      plugin: "nav2_behaviors::Spin"
+    backup:
+      plugin: "nav2_behaviors::BackUp"
+    wait:
+      plugin: "nav2_behaviors::Wait"
+    local_frame: odom
+    global_frame: map
+    robot_base_frame: body_link
+    transform_tolerance: 0.1
+    simulate_ahead_time: 2.0
+    max_rotational_vel: 1.0
+    min_rotational_vel: 0.4
+    rotational_acc_lim: 3.2
+
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      update_frequency: 5.0
+      publish_frequency: 2.0
+      global_frame: odom
+      robot_base_frame: body_link
+      rolling_window: true
+      width: 3
+      height: 3
+      resolution: 0.05
+      # Real outline incl. wheels (0.80 m x 0.76 m; see rover.urdf.xacro), not a
+      # 0.55 m circle: the circle made 1.6 m gaps nearly impassable and let the
+      # planner think the robot was "in collision" beside kitchen counters.
+      footprint: "[[0.40, 0.38], [0.40, -0.38], [-0.40, -0.38], [-0.40, 0.38]]"
+      plugins: ["obstacle_layer", "inflation_layer"]
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: True
+        observation_sources: scan
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0
+          clearing: True
+          marking: True
+          data_type: "LaserScan"
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 3.0
+        inflation_radius: 0.7
+      always_send_full_costmap: True
+
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      update_frequency: 1.0
+      publish_frequency: 1.0
+      global_frame: map
+      robot_base_frame: body_link
+      # Real outline incl. wheels (0.80 m x 0.76 m; see rover.urdf.xacro), not a
+      # 0.55 m circle: the circle made 1.6 m gaps nearly impassable and let the
+      # planner think the robot was "in collision" beside kitchen counters.
+      footprint: "[[0.40, 0.38], [0.40, -0.38], [-0.40, -0.38], [-0.40, 0.38]]"
+      resolution: 0.05
+      track_unknown_space: true
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_topic: /map   # slam_toolbox's map (explicit so the fleet can prefix it)
+        map_subscribe_transient_local: True
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: True
+        observation_sources: scan
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0
+          clearing: True
+          marking: True
+          data_type: "LaserScan"
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 3.0
+        inflation_radius: 0.7
+      always_send_full_costmap: True

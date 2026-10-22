@@ -1,0 +1,297 @@
+# record.rviz - fleet.rviz trimmed for video: no side panels, 1280x720, 10 fps (tools/rviz_recorder)
+Panels: []
+Visualization Manager:
+  Class: ''
+  Displays:
+  - Alpha: 0.3
+    Cell Size: 1
+    Class: rviz_default_plugins/Grid
+    Color: 160; 160; 164
+    Enabled: true
+    Name: Grid
+    Plane: XY
+    Plane Cell Count: 30
+    Reference Frame: world
+    Value: true
+  - Alpha: 0.8
+    Class: rviz_default_plugins/Map
+    Color Scheme: map
+    Enabled: true
+    Name: What the base knows
+    Topic:
+      Depth: 5
+      Durability Policy: Transient Local
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Value: /fleet/base_map
+    Update Topic:
+      Value: /fleet/base_map_updates
+    Use Timestamp: false
+    Value: true
+  - Class: rviz_default_plugins/MarkerArray
+    Enabled: true
+    Name: Radio links, base, beacons, robots
+    Namespaces: {}
+    Topic:
+      Depth: 5
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Value: /fleet/markers
+    Value: true
+  - Class: rviz_common/Group
+    Enabled: true
+    Name: robot1
+    Value: true
+    Displays:
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Description Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot1/robot_description
+      Enabled: true
+      Name: Model
+      TF Prefix: robot1
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Alpha: 1
+      Class: rviz_default_plugins/LaserScan
+      Color: 255; 138; 61
+      Color Transformer: FlatColor
+      Enabled: true
+      Name: Lidar
+      Size (m): 0.05
+      Style: Flat Squares
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+        Value: /robot1/scan
+      Use Fixed Frame: true
+      Value: true
+    - Alpha: 1
+      Class: rviz_default_plugins/Path
+      Color: 255; 138; 61
+      Enabled: true
+      Line Style: Lines
+      Line Width: 0.03
+      Name: Nav2 plan
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot1/plan
+      Value: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: Target
+      Namespaces: {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot1/fleet/target
+      Value: true
+    - Alpha: 0.5
+      Class: rviz_default_plugins/Map
+      Color Scheme: map
+      Enabled: false
+      Name: What it knows
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot1/fleet/map_out
+      Update Topic:
+        Value: /robot1/fleet/map_out_updates
+      Use Timestamp: false
+      Value: false
+  - Class: rviz_common/Group
+    Enabled: true
+    Name: robot2
+    Value: true
+    Displays:
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Description Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot2/robot_description
+      Enabled: true
+      Name: Model
+      TF Prefix: robot2
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Alpha: 1
+      Class: rviz_default_plugins/LaserScan
+      Color: 61; 196; 255
+      Color Transformer: FlatColor
+      Enabled: true
+      Name: Lidar
+      Size (m): 0.05
+      Style: Flat Squares
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+        Value: /robot2/scan
+      Use Fixed Frame: true
+      Value: true
+    - Alpha: 1
+      Class: rviz_default_plugins/Path
+      Color: 61; 196; 255
+      Enabled: true
+      Line Style: Lines
+      Line Width: 0.03
+      Name: Nav2 plan
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot2/plan
+      Value: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: Target
+      Namespaces: {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot2/fleet/target
+      Value: true
+    - Alpha: 0.5
+      Class: rviz_default_plugins/Map
+      Color Scheme: map
+      Enabled: false
+      Name: What it knows
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot2/fleet/map_out
+      Update Topic:
+        Value: /robot2/fleet/map_out_updates
+      Use Timestamp: false
+      Value: false
+  - Class: rviz_common/Group
+    Enabled: true
+    Name: robot3
+    Value: true
+    Displays:
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Description Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot3/robot_description
+      Enabled: true
+      Name: Model
+      TF Prefix: robot3
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Alpha: 1
+      Class: rviz_default_plugins/LaserScan
+      Color: 232; 93; 197
+      Color Transformer: FlatColor
+      Enabled: true
+      Name: Lidar
+      Size (m): 0.05
+      Style: Flat Squares
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+        Value: /robot3/scan
+      Use Fixed Frame: true
+      Value: true
+    - Alpha: 1
+      Class: rviz_default_plugins/Path
+      Color: 232; 93; 197
+      Enabled: true
+      Line Style: Lines
+      Line Width: 0.03
+      Name: Nav2 plan
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot3/plan
+      Value: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: Target
+      Namespaces: {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot3/fleet/target
+      Value: true
+    - Alpha: 0.5
+      Class: rviz_default_plugins/Map
+      Color Scheme: map
+      Enabled: false
+      Name: What it knows
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot3/fleet/map_out
+      Update Topic:
+        Value: /robot3/fleet/map_out_updates
+      Use Timestamp: false
+      Value: false
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: world
+    Frame Rate: 10
+  Name: root
+  Tools:
+  - Class: rviz_default_plugins/Interact
+  - Class: rviz_default_plugins/MoveCamera
+  - Class: rviz_default_plugins/Select
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/TopDownOrtho
+      Name: Current View
+      Scale: 47
+      X: 3
+      Y: 1.5
+      Angle: 0
+    Saved: null
+Window Geometry:
+  Displays:
+    collapsed: true
+  Height: 720
+  Hide Left Dock: true
+  Hide Right Dock: true
+  Views:
+    collapsed: true
+  Width: 1280
+  X: 0
+  Y: 0

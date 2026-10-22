@@ -1,0 +1,19 @@
+# autonomy.yaml — mission FSM parameters (autonomy:=true). Anything not
+# listed uses the default in rover_autonomy/src/autonomous_decision_maker.cpp.
+autonomous_decision_maker:
+  ros__parameters:
+    # Frontier choice: cost = distance_weight * distance - size_weight * length.
+    # Raise size_weight to favour big openings (e.g. doorways into unseen
+    # rooms) over nearby corners; raise distance_weight to travel less.
+    frontier_distance_weight: 1.0
+    frontier_size_weight: 1.0
+    frontier_min_size: 0.5          # m; shorter frontiers are lidar speckle
+    frontier_min_goal_distance: 1.0 # m; closer goals don't move the robot enough to map anything new
+    frontier_min_unknown_area: 4.0  # m^2; smaller unknown pockets are furniture shadows, not rooms
+    frontier_min_clearance: 0.6     # m from obstacles; the rover's corners sweep 0.55 m when it turns
+    frontier_blacklist_radius: 0.75 # m; skip frontiers near ones Nav2 failed to reach
+    explore_goal_timeout: 60.0      # s; give up on a frontier after pursuing it this long
+    # Exploration ends (and the rover returns home) when fewer than
+    # explore_min_progress m^2 have been mapped in the last explore_stall_timeout s.
+    explore_stall_timeout: 60.0     # s
+    explore_min_progress: 1.0       # m^2

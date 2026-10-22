@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="http://download.ros.org/schema/package_format3.xsd"?>
+<package format="3">
+  <name>rover_autonomy</name>
+  <version>0.1.0</version>
+  <description>
+    Robot-agnostic behavior nodes: the autonomous mission FSM
+    (frontier exploration / avoid / return-home / e-stop, driving through Nav2) and the
+    lidar safety gate that every velocity command passes through last.
+  </description>
+  <maintainer email="jeb@example.com">Jeb</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>nav2_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

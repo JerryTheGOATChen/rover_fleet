@@ -1,0 +1,30 @@
+# twist_mux.yaml — who gets to drive.
+#
+# Every velocity source publishes on its own topic; twist_mux forwards the
+# highest-priority one that has published within `timeout` seconds to
+# /cmd_vel_mux, and lidar_safety_node then gates that into /cmd_vel_safe,
+# which is the only topic the drive (Gazebo or diff_drive_controller) reads.
+#
+#   /autonomy/cmd_vel  FSM AVOID_OBSTACLE / EMERGENCY_STOP   priority 100
+#   /cmd_vel           teleop / manual                       priority  50
+#   /nav2/cmd_vel      Nav2 (controller + recoveries)        priority  10
+#
+# So teleop can nudge the robot while Nav2 is driving (Nav2 resumes 0.5 s
+# after the last key press), and the FSM's e-stop beats everything.
+
+twist_mux:
+  ros__parameters:
+    use_stamped: false
+    topics:
+      autonomy:
+        topic: autonomy/cmd_vel
+        timeout: 0.5
+        priority: 100
+      teleop:
+        topic: cmd_vel
+        timeout: 0.5
+        priority: 50
+      navigation:
+        topic: nav2/cmd_vel
+        timeout: 0.5
+        priority: 10
